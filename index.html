@@ -3,180 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IoT Smart Alarm Control</title>
-    
+    <title>Smart Alarm Dashboard</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; display: flex; justify-content: center; }
-        .container { background: white; width: 100%; max-width: 500px; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; }
+        body { font-family: 'Segoe UI', sans-serif; background: #eceff1; display: flex; justify-content: center; padding: 20px; }
+        .container { background: white; width: 100%; max-width: 450px; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; }
         
-        /* นาฬิกา */
-        .clock { font-size: 48px; font-weight: bold; color: #333; margin-bottom: 20px; letter-spacing: 2px; }
+        .header-badge { background: #4caf50; color: white; padding: 10px 20px; border-radius: 50px; font-weight: bold; display: inline-block; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(76, 175, 80, 0.3); }
+        .clock { font-size: 56px; font-weight: 800; color: #263238; margin: 10px 0; letter-spacing: 2px; }
         
-        /* การ์ดแสดงผล */
-        .status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
-        .card { background: #e3f2fd; padding: 15px; border-radius: 10px; }
-        .card h3 { margin: 0 0 5px 0; font-size: 14px; color: #555; }
-        .card .value { font-size: 24px; font-weight: bold; color: #1565c0; }
-        
-        /* ปุ่มสวิตช์หลัก */
-        .main-switch { margin-bottom: 25px; padding: 20px; border-radius: 10px; transition: 0.3s; cursor: pointer; border: 2px solid #ddd; }
-        .main-switch.active { background-color: #e8f5e9; border-color: #4caf50; }
-        .main-switch.inactive { background-color: #ffebee; border-color: #f44336; }
-        .switch-label { font-size: 20px; font-weight: bold; }
-        .status-text { display: block; margin-top: 5px; font-size: 14px; }
+        .status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 30px 0; }
+        .card { background: #f5f7fa; padding: 20px; border-radius: 15px; border: 1px solid #e0e0e0; }
+        .card h3 { margin: 0; font-size: 14px; color: #78909c; }
+        .card .value { font-size: 28px; font-weight: bold; color: #37474f; margin-top: 5px; }
 
-        /* ส่วนตั้งเวลา */
-        .timer-section { background: #fafafa; padding: 20px; border-radius: 10px; border: 1px dashed #ccc; }
-        .timer-inputs { display: flex; justify-content: center; align-items: center; gap: 10px; margin: 15px 0; }
-        input[type="number"] { width: 60px; padding: 10px; text-align: center; font-size: 18px; border: 1px solid #ccc; border-radius: 5px; }
-        .btn-set { background: #2196f3; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; width: 100%; }
-        .btn-set:hover { background: #1976d2; }
+        .timer-box { background: #e3f2fd; padding: 20px; border-radius: 15px; border: 2px dashed #90caf9; margin-top: 20px; }
+        .timer-inputs input { width: 60px; padding: 10px; font-size: 20px; text-align: center; border: 2px solid #fff; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .btn-save { background: #1976d2; color: white; border: none; padding: 12px; width: 100%; border-radius: 10px; margin-top: 15px; font-size: 16px; cursor: pointer; font-weight: bold; }
+        .btn-save:hover { background: #1565c0; }
 
-        /* แถบแจ้งเตือนเมื่อ Buzzer ดัง */
-        #alarm-alert { display: none; background: #d32f2f; color: white; padding: 15px; margin-bottom: 20px; border-radius: 5px; animation: blink 1s infinite; font-weight: bold; }
-        
-        @keyframes blink { 50% { opacity: 0.5; } }
+        /* การแจ้งเตือน */
+        #alert-box { display: none; background: #ff5252; color: white; padding: 20px; border-radius: 15px; margin-bottom: 20px; animation: pulse 1s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div id="alarm-alert">🚨 แจ้งเตือน! ระบบกำลังทำงาน (ALARMING) 🚨</div>
+    <div id="alert-box">
+        <h1>🚨 ALARM! 🚨</h1>
+        <p>ตรวจพบความผิดปกติ หรือ ถึงเวลาแจ้งเตือน</p>
+    </div>
 
-    <div class="clock" id="realtime-clock">00:00:00</div>
+    <div class="header-badge">● SYSTEM ONLINE (ระบบทำงานอัตโนมัติ)</div>
+
+    <div class="clock" id="clock">00:00:00</div>
+    <div style="color: #78909c; font-size: 14px;">Real-time Monitoring</div>
 
     <div class="status-grid">
         <div class="card">
-            <h3>อุณหภูมิ (Temp)</h3>
-            <div class="value"><span id="temp-val">--</span> °C</div>
+            <h3>Temperature</h3>
+            <div class="value"><span id="t-val">--</span> °C</div>
         </div>
         <div class="card">
-            <h3>ความชื้นดิน (Soil)</h3>
-            <div class="value"><span id="soil-val">--</span> %</div>
+            <h3>Soil Moisture</h3>
+            <div class="value"><span id="s-val">--</span> %</div>
         </div>
     </div>
 
-    <div id="master-btn" class="main-switch inactive" onclick="toggleSystem()">
-        <span class="switch-label" id="btn-text">SYSTEM OFF</span>
-        <span class="status-text" id="btn-subtext">คลิกเพื่อเปิดระบบ</span>
-    </div>
-
-    <div class="timer-section">
-        <h3>⏰ ตั้งเวลาปลุก (Alarm Clock)</h3>
+    <div class="timer-box">
+        <h3 style="margin-top:0; color:#1565c0;">⏰ Set Alarm Time</h3>
         <div class="timer-inputs">
-            <input type="number" id="input-hour" placeholder="HH" min="0" max="23">
-            <span>:</span>
-            <input type="number" id="input-minute" placeholder="MM" min="0" max="59">
+            <input type="number" id="hh" placeholder="HH" min="0" max="23"> : 
+            <input type="number" id="mm" placeholder="MM" min="0" max="59">
         </div>
-        <button class="btn-set" onclick="setAlarmTime()">บันทึกเวลาปลุก</button>
-        <p style="font-size: 12px; color: #666; margin-top: 10px;">ตั้งค่าปัจจุบัน: <span id="current-set-time">--:--</span></p>
+        <button class="btn-save" onclick="saveTime()">บันทึกเวลาปลุก</button>
+        <p style="margin-bottom:0; font-size:13px; color:#546e7a;">เวลาที่ตั้งไว้: <span id="set-time">--:--</span></p>
     </div>
 </div>
 
 <script>
-    // 1. ตั้งค่า Firebase (ก๊อปมาจากโค้ด Arduino เป๊ะๆ)
     const firebaseConfig = {
         apiKey: "AIzaSyD3V-qYNxPh-jU8A5cEMGo4RH0fJOWa4C4",
         databaseURL: "https://kjszz-1a818-default-rtdb.firebaseio.com"
     };
-
-    // เริ่มต้นทำงาน Firebase
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    let isSystemOn = false;
-
-    // 2. ฟังก์ชันนาฬิกา Real-time
-    function updateClock() {
+    // นาฬิกาเดินเอง
+    setInterval(() => {
         const now = new Date();
-        const hours = String(now.getHours()).padStart(2, '0');
-        const minutes = String(now.getMinutes()).padStart(2, '0');
-        const seconds = String(now.getSeconds()).padStart(2, '0');
-        document.getElementById('realtime-clock').innerText = `${hours}:${minutes}:${seconds}`;
-    }
-    setInterval(updateClock, 1000);
-    updateClock();
+        document.getElementById('clock').innerText = now.toLocaleTimeString('th-TH', {hour12:false});
+    }, 1000);
 
-    // 3. อ่านค่าจาก Firebase (Listener)
-    
-    // 3.1 อ่านค่า Sensor และสถานะ Alarm
-    db.ref('sensor').on('value', (snapshot) => {
-        const data = snapshot.val();
-        if (data) {
-            document.getElementById('temp-val').innerText = data.temperature.toFixed(1);
-            document.getElementById('soil-val').innerText = data.soil;
+    // รับค่าจากบอร์ด
+    db.ref('sensor').on('value', (snap) => {
+        const d = snap.val();
+        if(d) {
+            document.getElementById('t-val').innerText = d.temperature.toFixed(1);
+            document.getElementById('s-val').innerText = d.soil;
             
-            // ถ้า Alarm ดัง ให้โชว์แถบแดง
-            const alertBox = document.getElementById('alarm-alert');
-            if (data.alarm === true) {
-                alertBox.style.display = 'block';
+            // ถ้าบอร์ดส่งมาว่า Alarm = true ให้โชว์กล่องแดง
+            if(d.alarm) {
+                document.getElementById('alert-box').style.display = 'block';
             } else {
-                alertBox.style.display = 'none';
+                document.getElementById('alert-box').style.display = 'none';
             }
         }
     });
 
-    // 3.2 อ่านสถานะปุ่ม (Master Switch)
-    db.ref('control/alarm').on('value', (snapshot) => {
-        isSystemOn = snapshot.val();
-        updateButtonUI();
+    // รับค่าเวลาที่ตั้งไว้
+    db.ref('control').on('value', (snap) => {
+        const d = snap.val();
+        if(d) document.getElementById('set-time').innerText = `${d.set_hour}:${String(d.set_minute).padStart(2,'0')}`;
     });
 
-    // 3.3 อ่านเวลาที่ตั้งไว้ล่าสุด
-    db.ref('control').on('value', (snapshot) => {
-        const data = snapshot.val();
-        if(data && data.set_hour !== undefined) {
-             const h = String(data.set_hour).padStart(2, '0');
-             const m = String(data.set_minute).padStart(2, '0');
-             document.getElementById('current-set-time').innerText = `${h}:${m}`;
-        }
-    });
-
-    // 4. ฟังก์ชันควบคุม
-    
-    // กดปุ่ม เปิด/ปิด
-    function toggleSystem() {
-        isSystemOn = !isSystemOn;
-        // ส่งค่าไป Firebase
-        db.ref('control/alarm').set(isSystemOn);
-    }
-
-    // อัปเดตหน้าตาปุ่ม
-    function updateButtonUI() {
-        const btn = document.getElementById('master-btn');
-        const txt = document.getElementById('btn-text');
-        const sub = document.getElementById('btn-subtext');
-
-        if (isSystemOn) {
-            btn.className = "main-switch active";
-            txt.innerText = "SYSTEM ARMED (เปิด)";
-            sub.innerText = "ระบบพร้อมทำงาน (คลิกเพื่อปิด)";
-        } else {
-            btn.className = "main-switch inactive";
-            txt.innerText = "SYSTEM OFF (ปิด)";
-            sub.innerText = "ระบบถูกปิดเงียบ (คลิกเพื่อเปิด)";
+    // ส่งค่าตั้งเวลา
+    function saveTime() {
+        const h = parseInt(document.getElementById('hh').value);
+        const m = parseInt(document.getElementById('mm').value);
+        if(!isNaN(h) && !isNaN(m)) {
+            db.ref('control/set_hour').set(h);
+            db.ref('control/set_minute').set(m);
+            alert("บันทึกเวลาแล้ว!");
         }
     }
-
-    // ตั้งเวลาปลุก
-    function setAlarmTime() {
-        const h = parseInt(document.getElementById('input-hour').value);
-        const m = parseInt(document.getElementById('input-minute').value);
-
-        if (isNaN(h) || isNaN(m) || h < 0 || h > 23 || m < 0 || m > 59) {
-            alert("กรุณากรอกเวลาให้ถูกต้อง (0-23 นาฬิกา, 0-59 นาที)");
-            return;
-        }
-
-        // ส่งค่าเวลาไป Firebase
-        db.ref('control/set_hour').set(h);
-        db.ref('control/set_minute').set(m);
-        alert(`ตั้งเวลาปลุกเรียบร้อยเป็น ${h}:${String(m).padStart(2,'0')} น.`);
-    }
-
 </script>
 
 </body>
