@@ -1,107 +1,61 @@
 <!DOCTYPE html>
-<html lang="th">
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Plant Monitor</title>
+    <title>Smart Plant Dashboard</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-    
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .card { background: white; padding: 2rem; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
-        h1 { color: #2c3e50; margin-bottom: 1.5rem; }
-        .sensor-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
-        .sensor-box { padding: 15px; border-radius: 15px; background: #f8f9fa; }
-        .label { font-size: 0.8rem; color: #7f8c8d; text-transform: uppercase; }
-        .value { font-size: 1.5rem; font-weight: bold; color: #2980b9; margin-top: 5px; }
-        .status { padding: 10px; border-radius: 10px; margin-top: 10px; font-weight: bold; }
-        .alarm-on { background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; }
-        .alarm-off { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
-        button { width: 100%; padding: 15px; border: none; border-radius: 10px; cursor: pointer; font-size: 1rem; font-weight: bold; transition: 0.3s; margin-top: 10px; }
-        .btn-on { background: #e74c3c; color: white; }
-        .btn-off { background: #2ecc71; color: white; }
-        .btn-on:hover { background: #c0392b; }
-        .btn-off:hover { background: #27ae60; }
+        body { font-family: sans-serif; background: #eceff1; display: flex; justify-content: center; padding: 20px; }
+        .box { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 350px; text-align: center; }
+        .data-val { font-size: 24px; font-weight: bold; color: #1565c0; }
+        .status { margin: 15px 0; padding: 10px; border-radius: 8px; font-weight: bold; }
+        .on { background: #ffebee; color: #c62828; }
+        .off { background: #e8f5e9; color: #2e7d32; }
+        button { width: 100%; padding: 12px; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; }
+        .btn-red { background: #f44336; }
+        .btn-green { background: #4caf50; }
+        .uptime { font-size: 12px; color: #78909c; margin-top: 10px; }
     </style>
 </head>
 <body>
-
-<div class="card">
-    <h1>🌱 Smart Plant</h1>
-    
-    <div class="sensor-grid">
-        <div class="sensor-box">
-            <div class="label">อุณหภูมิ</div>
-            <div class="value"><span id="temp">--</span>°C</div>
-        </div>
-        <div class="sensor-box">
-            <div class="label">ความชื้นดิน</div>
-            <div class="value"><span id="soil">--</span>%</div>
-        </div>
+    <div class="box">
+        <h2>🌱 Plant Monitor</h2>
+        <p>อุณหภูมิ: <span class="data-val" id="temp">--</span> °C</p>
+        <p>ความชื้นดิน: <span class="data-val" id="soil">--</span> %</p>
+        <div id="statusBox" class="status off">สถานะปกติ</div>
+        <button id="btn" class="btn-green" onclick="toggle()">เปิดเสียงไซเรน</button>
+        <div class="uptime">อัปเดตล่าสุด: <span id="time">--</span></div>
     </div>
 
-    <div id="alarmStatus" class="status alarm-off">
-        ระบบปกติ (Buzzer OFF)
-    </div>
+    <script>
+        const config = { apiKey: "AIzaSyD3V-qYNxPh-jU8A5cEMGo4RH0fJOWa4C4", databaseURL: "https://kjszz-1a818-default-rtdb.firebaseio.com" };
+        firebase.initializeApp(config);
+        const db = firebase.database();
+        let webStatus = false;
 
-    <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
-
-    <div class="label" style="margin-bottom: 10px;">ควบคุมด้วยตัวเอง (Web Override)</div>
-    <button id="btnControl" class="btn-off" onclick="toggleAlarm()">เปิดเสียงไซเรน</button>
-</div>
-
-<script>
-    // การตั้งค่า Firebase (ก๊อปปี้มาจากใน Arduino ของคุณ)
-    const firebaseConfig = {
-        apiKey: "AIzaSyD3V-qYNxPh-jU8A5cEMGo4RH0fJOWa4C4",
-        databaseURL: "https://kjszz-1a818-default-rtdb.firebaseio.com"
-    };
-
-    // เริ่มต้น Firebase
-    firebase.initializeApp(firebaseConfig);
-    const database = firebase.database();
-
-    // ตัวแปรเก็บสถานะปัจจุบันของปุ่ม
-    let currentWebAlarm = false;
-
-    // --- 1. ฟังค่าจาก Sensor (Real-time) ---
-    database.ref('sensor').on('value', (snapshot) => {
-        const data = snapshot.val();
-        if (data) {
-            document.getElementById('temp').innerText = data.temperature.toFixed(1);
-            document.getElementById('soil').innerText = data.soil;
+        // ดึงข้อมูล Real-time
+        db.ref('sensor').on('value', (s) => {
+            const val = s.val();
+            document.getElementById('temp').innerText = val.temperature;
+            document.getElementById('soil').innerText = val.soil;
+            document.getElementById('time').innerText = val.last_update;
             
-            const alarmDiv = document.getElementById('alarmStatus');
-            if (data.alarm) {
-                alarmDiv.innerText = "🚨 ตรวจพบความผิดปกติ!";
-                alarmDiv.className = "status alarm-on";
-            } else {
-                alarmDiv.innerText = "✅ ระบบปกติ";
-                alarmDiv.className = "status alarm-off";
-            }
-        }
-    });
+            const sBox = document.getElementById('statusBox');
+            if(val.alarm) { sBox.innerText = "🚨 ตรวจพบความผิดปกติ!"; sBox.className = "status on"; }
+            else { sBox.innerText = "✅ สถานะปกติ"; sBox.className = "status off"; }
+        });
 
-    // --- 2. ฟังสถานะปุ่มกดจาก Database ---
-    database.ref('control/alarm').on('value', (snapshot) => {
-        currentWebAlarm = snapshot.val();
-        const btn = document.getElementById('btnControl');
-        if (currentWebAlarm) {
-            btn.innerText = "ปิดเสียงไซเรน";
-            btn.className = "btn-on";
-        } else {
-            btn.innerText = "เปิดเสียงไซเรน";
-            btn.className = "btn-off";
-        }
-    });
+        // ดึงสถานะปุ่ม
+        db.ref('control/alarm').on('value', (s) => {
+            webStatus = s.val();
+            const b = document.getElementById('btn');
+            b.innerText = webStatus ? "ปิดเสียงไซเรน" : "เปิดเสียงไซเรน";
+            b.className = webStatus ? "btn-red" : "btn-green";
+        });
 
-    // --- 3. ฟังก์ชันกดปุ่ม ---
-    function toggleAlarm() {
-        const nextState = !currentWebAlarm;
-        database.ref('control/alarm').set(nextState);
-    }
-</script>
-
+        function toggle() { db.ref('control/alarm').set(!webStatus); }
+    </script>
 </body>
 </html>
