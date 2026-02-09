@@ -1,103 +1,58 @@
 <!DOCTYPE html>
-<html lang="th">
+<html>
 <head>
 <meta charset="UTF-8">
-<title>Smart Plant Monitor</title>
+<title>Soil Alarm Control</title>
 
-<!-- Firebase v8 -->
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
 <style>
 body{
-  font-family:Segoe UI;
-  background:#0f172a;
-  color:white;
+  font-family: Arial;
   text-align:center;
-  padding:30px;
-}
-.card{
-  background:#1e293b;
-  padding:20px;
-  margin:15px auto;
-  width:320px;
-  border-radius:15px;
-  font-size:22px;
+  margin-top:80px;
 }
 button{
-  padding:15px 25px;
+  padding:15px 30px;
   font-size:20px;
-  border:none;
-  border-radius:12px;
-  cursor:pointer;
-  margin-top:15px;
+  margin:10px;
 }
-.on{background:#16a34a;color:white;}
-.off{background:#dc2626;color:white;}
 </style>
 </head>
 
 <body>
 
-<h1>🌱 Smart Plant Monitor</h1>
+<h1>🌱 Soil Alarm Control</h1>
 
-<div class="card">🌿 Soil : <span id="soil">--</span>%</div>
-<div class="card">🌡 Temp : <span id="temp">--</span> °C</div>
-<div class="card">🚨 Alarm : <span id="alarm">--</span></div>
+<button onclick="setAlarm(true)">🔴 Alarm ON</button>
+<button onclick="setAlarm(false)">🟢 Alarm OFF</button>
 
-<button id="toggleBtn" class="off">🔇 ปิดเสียง</button>
+<h2 id="status">Loading...</h2>
 
 <script>
-
-/* ===== Firebase Config ===== */
 const firebaseConfig = {
-  apiKey: "AIzaSyC1a-XkNqLQ-fR9K9G3rRq4H3k9SKw9EF0",
-  databaseURL: "https://kjszz-1a818-default-rtdb.firebaseio.com/"
+  apiKey: "AIzaSyD2IwpGy6Zz4pLhejIAfP-EAeBKUyXgJwc",
+  authDomain: "kjszz-la818.firebaseapp.com",
+  databaseURL: "https://kjszz-la818-default-rtdb.firebaseio.com",
+  projectId: "kjszz-la818",
+  storageBucket: "kjszz-la818.firebasestorage.app",
+  messagingSenderId: "1056726378754",
+  appId: "1:1056726378754:web:fea6ee2b60dcda89783a1b",
+  measurementId: "G-S1WLLDMQ15"
 };
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-/* ===== READ SENSOR ===== */
-db.ref("/sensor/soil").on("value",snap=>{
-  document.getElementById("soil").innerText=snap.val();
-});
-
-db.ref("/sensor/temperature").on("value",snap=>{
-  document.getElementById("temp").innerText=snap.val();
-});
-
-db.ref("/sensor/alarm").on("value",snap=>{
-  document.getElementById("alarm").innerText=
-    snap.val() ? "กำลังแจ้งเตือน 🔥" : "ปกติ ✅";
-});
-
-/* ===== BUZZER CONTROL ===== */
-let alarmEnable=false;
-
-db.ref("/control/enable").on("value",snap=>{
-  alarmEnable=snap.val();
-  updateButton();
-});
-
-function updateButton(){
-  const btn=document.getElementById("toggleBtn");
-
-  if(alarmEnable){
-    btn.innerText="🔊 เปิดเสียง";
-    btn.className="on";
-  }else{
-    btn.innerText="🔇 ปิดเสียง";
-    btn.className="off";
-  }
+function setAlarm(val){
+  db.ref("control/alarm").set(val);
 }
 
-document.getElementById("toggleBtn").onclick=()=>{
-  db.ref("/control").update({
-    enable:!alarmEnable
-  });
-};
-
+db.ref("control/alarm").on("value",(snap)=>{
+  document.getElementById("status").innerText =
+   "Alarm Status : " + snap.val();
+});
 </script>
 
 </body>
