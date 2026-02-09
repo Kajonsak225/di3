@@ -1,59 +1,126 @@
 <!DOCTYPE html>
-<html>
+<html lang="th">
 <head>
 <meta charset="UTF-8">
-<title>Soil Alarm Control</title>
+<title>ESP8266 Smart Monitor</title>
 
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
 <style>
 body{
-  font-family: Arial;
-  text-align:center;
-  margin-top:80px;
+ font-family:Segoe UI;
+ background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+ color:white;
+ text-align:center;
+ padding:30px;
+}
+.card{
+ background:rgba(255,255,255,0.1);
+ backdrop-filter:blur(10px);
+ border-radius:15px;
+ padding:20px;
+ margin:15px auto;
+ width:300px;
+ box-shadow:0 0 20px rgba(0,0,0,0.3);
+}
+.value{
+ font-size:40px;
+ font-weight:bold;
+}
+.alert{
+ background:red;
+ padding:10px;
+ border-radius:10px;
+ margin-top:10px;
+ display:none;
 }
 button{
-  padding:15px 30px;
-  font-size:20px;
-  margin:10px;
+ padding:10px 20px;
+ border:none;
+ border-radius:10px;
+ font-size:16px;
+ cursor:pointer;
 }
+.on{background:#ff4444;color:white;}
+.off{background:#00c851;color:white;}
 </style>
 </head>
 
 <body>
 
-<h1>🌱 Soil Alarm Control</h1>
+<h1>🌱 Smart Sensor Dashboard</h1>
 
-<button onclick="setAlarm(true)">🔴 Alarm ON</button>
-<button onclick="setAlarm(false)">🟢 Alarm OFF</button>
+<div class="card">
+ <h3>🌡️ อุณหภูมิ</h3>
+ <div class="value" id="temp">--</div>
+</div>
 
-<h2 id="status">Loading...</h2>
+<div class="card">
+ <h3>💧 ความชื้นดิน</h3>
+ <div class="value" id="soil">--</div>
+</div>
+
+<div class="card">
+ <h3>⏰ เวลา</h3>
+ <div id="time"></div>
+</div>
+
+<div class="card">
+ <h3>🔔 ควบคุมบัสเซอร์</h3>
+ <button class="on" onclick="setAlarm(true)">ON</button>
+ <button class="off" onclick="setAlarm(false)">OFF</button>
+ <div id="alarmStatus"></div>
+</div>
+
+<div id="alertBox" class="alert">
+ 🔥 อุณหภูมิสูงเกิน บัสเซอร์กำลังทำงาน !
+</div>
 
 <script>
+
+/* ===== Firebase Config (แก้ของมึง) ===== */
 const firebaseConfig = {
-  apiKey: "AIzaSyD2IwpGy6Zz4pLhejIAfP-EAeBKUyXgJwc",
-  authDomain: "kjszz-la818.firebaseapp.com",
-  databaseURL: "https://kjszz-la818-default-rtdb.firebaseio.com",
-  projectId: "kjszz-la818",
-  storageBucket: "kjszz-la818.firebasestorage.app",
-  messagingSenderId: "1056726378754",
-  appId: "1:1056726378754:web:fea6ee2b60dcda89783a1b",
-  measurementId: "G-S1WLLDMQ15"
+ apiKey:"APIKEY",
+ databaseURL:"https://xxxx-default-rtdb.firebaseio.com/"
 };
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-function setAlarm(val){
-  db.ref("control/alarm").set(val);
+/* ===== อ่านค่า Sensor ===== */
+db.ref("sensor").on("value",snap=>{
+ let data=snap.val();
+ if(!data) return;
+
+ document.getElementById("temp").innerHTML=
+  data.temperature+" °C";
+
+ document.getElementById("soil").innerHTML=
+  data.soil+" %";
+
+ document.getElementById("alarmStatus").innerHTML=
+  data.alarm?"🔔 ON":"🔕 OFF";
+
+ if(data.temperature>=35){
+  document.getElementById("alertBox").style.display="block";
+ }else{
+  document.getElementById("alertBox").style.display="none";
+ }
+});
+
+/* ===== กดเว็บควบคุม ===== */
+function setAlarm(v){
+ db.ref("control/alarm").set(v);
 }
 
-db.ref("control/alarm").on("value",(snap)=>{
-  document.getElementById("status").innerText =
-   "Alarm Status : " + snap.val();
-});
-</script>
+/* ===== เวลา ===== */
+setInterval(()=>{
+ let now=new Date();
+ document.getElementById("time").innerHTML=
+ now.toLocaleString("th-TH");
+},1000);
 
+</script>
 </body>
 </html>
