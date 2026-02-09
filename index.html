@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cyber Smart Farm Pro</title>
+    <title>Cyber Smart Farm Pro - Master Mute</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -39,7 +39,6 @@
             text-align: center;
         }
 
-        /* นาฬิกา Real-time */
         .live-clock {
             font-size: 3rem;
             font-weight: bold;
@@ -101,8 +100,10 @@
             letter-spacing: 3px;
         }
 
-        .btn-on { background: var(--danger); color: white; box-shadow: 0 0 30px rgba(255, 45, 85, 0.4); }
-        .btn-off { background: var(--success); color: #000; box-shadow: 0 0 30px rgba(0, 255, 163, 0.4); }
+        /* ปุ่มเขียว = เปิดระบบเฝ้าระวัง */
+        .btn-armed { background: var(--success); color: #000; box-shadow: 0 0 30px rgba(0, 255, 163, 0.4); }
+        /* ปุ่มแดง = ปิดระบบ/สั่งเงียบ */
+        .btn-muted { background: var(--danger); color: white; box-shadow: 0 0 30px rgba(255, 45, 85, 0.4); }
 
         .uptime-info {
             margin-top: 25px;
@@ -119,7 +120,7 @@
     <div class="live-clock" id="clock">00:00:00</div>
     <div class="live-date" id="date">-- --- ----</div>
     
-    <div id="alarmStatus" class="status-badge status-ok">SYSTEM ONLINE</div>
+    <div id="alarmStatus" class="status-badge status-ok">SYSTEM READY</div>
 
     <div class="stats-grid">
         <div class="stat-card">
@@ -134,31 +135,28 @@
         </div>
     </div>
 
-    <button id="btnControl" class="btn-control btn-off" onclick="toggleAlarm()">
-        SIREN OVERRIDE
+    <button id="btnControl" class="btn-control" onclick="toggleAlarm()">
+        LOADING...
     </button>
 
     <div class="uptime-info">
-        DEVICE UPTIME: <span id="uptime">--</span> | PATH: RTDB/SENSOR
+        DEVICE UPTIME: <span id="uptime">--</span> | MASTER MUTE ENABLED
     </div>
 </div>
 
 <script>
-    // 1. นาฬิกา Real-time JS
     function updateClock() {
         const now = new Date();
         const h = String(now.getHours()).padStart(2, '0');
         const m = String(now.getMinutes()).padStart(2, '0');
         const s = String(now.getSeconds()).padStart(2, '0');
         document.getElementById('clock').innerText = `${h}:${m}:${s}`;
-        
         const options = { year: 'numeric', month: 'long', day: 'numeric' };
         document.getElementById('date').innerText = now.toLocaleDateString('th-TH', options);
     }
     setInterval(updateClock, 1000);
     updateClock();
 
-    // 2. Firebase Connection
     const firebaseConfig = {
         apiKey: "AIzaSyD3V-qYNxPh-jU8A5cEMGo4RH0fJOWa4C4",
         databaseURL: "https://kjszz-1a818-default-rtdb.firebaseio.com"
@@ -166,9 +164,8 @@
 
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
-    let currentAlarm = false;
+    let currentAlarmState = false;
 
-    // 3. รับค่าจากเซนเซอร์
     database.ref('sensor').on('value', (snapshot) => {
         const val = snapshot.val();
         if (val) {
@@ -176,27 +173,33 @@
             document.getElementById('soil').innerText = val.soil;
             document.getElementById('uptime').innerText = val.last_update;
 
-            const status = document.getElementById('alarmStatus');
+            const statusBadge = document.getElementById('alarmStatus');
+            // เช็คสถานะการแจ้งเตือนจริงจากบอร์ด
             if (val.alarm) {
-                status.innerText = "🚨 CRITICAL ALERT";
-                status.className = "status-badge status-alert";
+                statusBadge.innerText = "🚨 ALARM TRIGGERED";
+                statusBadge.className = "status-badge status-alert";
             } else {
-                status.innerText = "✅ SYSTEM NORMAL";
-                status.className = "status-badge status-ok";
+                statusBadge.innerText = "✅ SYSTEM NORMAL";
+                statusBadge.className = "status-badge status-ok";
             }
         }
     });
 
-    // 4. รับสถานะปุ่มกด
     database.ref('control/alarm').on('value', (snapshot) => {
-        currentAlarm = snapshot.val();
+        currentAlarmState = snapshot.val();
         const btn = document.getElementById('btnControl');
-        btn.innerText = currentAlarm ? "MUTE SYSTEM" : "SIREN OVERRIDE";
-        btn.className = currentAlarm ? "btn-control btn-on" : "btn-control btn-off";
+        
+        if (currentAlarmState) {
+            btn.innerText = "SYSTEM ARMED (AUTO)";
+            btn.className = "btn-control btn-armed";
+        } else {
+            btn.innerText = "SYSTEM MUTED (OFF)";
+            btn.className = "btn-control btn-muted";
+        }
     });
 
     function toggleAlarm() {
-        database.ref('control/alarm').set(!currentAlarm);
+        database.ref('control/alarm').set(!currentAlarmState);
     }
 </script>
 
