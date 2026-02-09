@@ -2,124 +2,130 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<title>ESP8266 Smart Monitor</title>
+<title>SMART SENSOR DASHBOARD</title>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
 <style>
 body{
- font-family:Segoe UI;
- background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
- color:white;
- text-align:center;
- padding:30px;
+font-family:Segoe UI;
+background:linear-gradient(135deg,#1e3c72,#2a5298);
+color:white;
+text-align:center;
 }
+
 .card{
- background:rgba(255,255,255,0.1);
- backdrop-filter:blur(10px);
- border-radius:15px;
- padding:20px;
- margin:15px auto;
- width:300px;
- box-shadow:0 0 20px rgba(0,0,0,0.3);
+background:white;
+color:black;
+padding:20px;
+margin:15px auto;
+width:300px;
+border-radius:15px;
+box-shadow:0 10px 20px rgba(0,0,0,0.3);
 }
+
 .value{
- font-size:40px;
- font-weight:bold;
+font-size:40px;
+font-weight:bold;
 }
-.alert{
- background:red;
- padding:10px;
- border-radius:10px;
- margin-top:10px;
- display:none;
-}
+
 button{
- padding:10px 20px;
- border:none;
- border-radius:10px;
- font-size:16px;
- cursor:pointer;
+padding:15px;
+border:none;
+border-radius:10px;
+font-size:18px;
+cursor:pointer;
 }
+
 .on{background:#ff4444;color:white;}
 .off{background:#00c851;color:white;}
+
+.alert{
+background:red;
+padding:10px;
+margin:10px;
+border-radius:10px;
+display:none;
+}
 </style>
 </head>
 
 <body>
 
-<h1>🌱 Smart Sensor Dashboard</h1>
+<h1>🌱 SMART FARM DASHBOARD</h1>
 
-<div class="card">
- <h3>🌡️ อุณหภูมิ</h3>
- <div class="value" id="temp">--</div>
+<div id="time"></div>
+
+<div id="alert" class="alert">
+🔥 อุณหภูมิสูงเกิน !
 </div>
 
 <div class="card">
- <h3>💧 ความชื้นดิน</h3>
- <div class="value" id="soil">--</div>
+<h2>🌡️ Temperature</h2>
+<div id="temp" class="value">--</div>
 </div>
 
 <div class="card">
- <h3>⏰ เวลา</h3>
- <div id="time"></div>
+<h2>💧 Soil Moisture</h2>
+<div id="soil" class="value">--</div>
 </div>
 
 <div class="card">
- <h3>🔔 ควบคุมบัสเซอร์</h3>
- <button class="on" onclick="setAlarm(true)">ON</button>
- <button class="off" onclick="setAlarm(false)">OFF</button>
- <div id="alarmStatus"></div>
+<h2>🚨 Buzzer</h2>
+<div id="alarm" class="value">OFF</div>
 </div>
 
-<div id="alertBox" class="alert">
- 🔥 อุณหภูมิสูงเกิน บัสเซอร์กำลังทำงาน !
-</div>
+<button id="btn" class="off">เปิด Alarm</button>
 
 <script>
 
-/* ===== Firebase Config (แก้ของมึง) ===== */
-const firebaseConfig = {
- apiKey:"APIKEY",
- databaseURL:"https://xxxx-default-rtdb.firebaseio.com/"
+/* ================= FIREBASE ================= */
+var firebaseConfig={
+apiKey:"AIzaSyC1a-XkNqLQ-fR9K9G3rRq4H3k9SKw9EF0",
+databaseURL:"https://kjszz-1a818-default-rtdb.firebaseio.com/"
 };
 
 firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+var db=firebase.database();
 
-/* ===== อ่านค่า Sensor ===== */
-db.ref("sensor").on("value",snap=>{
- let data=snap.val();
- if(!data) return;
+/* ===== TIME ===== */
+setInterval(()=>{
+document.getElementById("time").innerText=
+new Date().toLocaleString();
+},1000);
 
- document.getElementById("temp").innerHTML=
-  data.temperature+" °C";
+/* ===== SENSOR ===== */
+db.ref("sensor/temperature").on("value",snap=>{
+let t=snap.val();
+document.getElementById("temp").innerText=t+" °C";
 
- document.getElementById("soil").innerHTML=
-  data.soil+" %";
-
- document.getElementById("alarmStatus").innerHTML=
-  data.alarm?"🔔 ON":"🔕 OFF";
-
- if(data.temperature>=35){
-  document.getElementById("alertBox").style.display="block";
- }else{
-  document.getElementById("alertBox").style.display="none";
- }
+if(t>=50){
+document.getElementById("alert").style.display="block";
+}else{
+document.getElementById("alert").style.display="none";
+}
 });
 
-/* ===== กดเว็บควบคุม ===== */
-function setAlarm(v){
- db.ref("control/alarm").set(v);
-}
+db.ref("sensor/soil").on("value",snap=>{
+document.getElementById("soil").innerText=snap.val()+" %";
+});
 
-/* ===== เวลา ===== */
-setInterval(()=>{
- let now=new Date();
- document.getElementById("time").innerHTML=
- now.toLocaleString("th-TH");
-},1000);
+db.ref("sensor/alarm").on("value",snap=>{
+let v=snap.val();
+document.getElementById("alarm").innerText=v?"ON":"OFF";
+
+let btn=document.getElementById("btn");
+btn.className=v?"on":"off";
+btn.innerText=v?"ปิด Alarm":"เปิด Alarm";
+});
+
+/* ===== BUTTON ===== */
+document.getElementById("btn").onclick=function(){
+db.ref("control/alarm").once("value").then(s=>{
+db.ref("control/alarm").set(!s.val());
+});
+};
 
 </script>
 </body>
