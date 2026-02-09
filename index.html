@@ -3,22 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cyber Smart Farm v2.0</title>
+    <title>Cyber Smart Farm Pro</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
-            --bg: #0b0e14;
-            --card: #151921;
-            --accent: #00d4ff;
-            --danger: #ff4b5c;
-            --success: #05ffa1;
-            --text: #e0e6ed;
+            --bg: #06090f;
+            --card: #111621;
+            --accent: #00f2ff;
+            --danger: #ff2d55;
+            --success: #00ffa3;
+            --text: #ffffff;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Consolas', 'Courier New', monospace;
             background-color: var(--bg);
             color: var(--text);
             display: flex;
@@ -26,141 +26,139 @@
             align-items: center;
             min-height: 100vh;
             margin: 0;
-            overflow: hidden;
         }
 
         .container {
             width: 90%;
-            max-width: 450px;
+            max-width: 480px;
             background: var(--card);
-            border-radius: 30px;
-            padding: 40px;
-            box-shadow: 0 0 50px rgba(0, 212, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 25px;
+            padding: 35px;
+            box-shadow: 0 0 40px rgba(0, 242, 255, 0.15);
+            border: 1px solid rgba(0, 242, 255, 0.2);
             text-align: center;
-            position: relative;
         }
 
-        .container::before {
-            content: "";
-            position: absolute;
-            top: -2px; left: -2px; right: -2px; bottom: -2px;
-            background: linear-gradient(45deg, var(--accent), transparent, var(--danger));
-            z-index: -1;
-            border-radius: 32px;
-            opacity: 0.3;
-        }
-
-        h1 {
-            font-size: 1.5rem;
-            letter-spacing: 3px;
-            margin-bottom: 30px;
+        /* นาฬิกา Real-time */
+        .live-clock {
+            font-size: 3rem;
+            font-weight: bold;
             color: var(--accent);
+            text-shadow: 0 0 20px rgba(0, 242, 255, 0.5);
+            margin-bottom: 5px;
+        }
+
+        .live-date {
+            font-size: 0.9rem;
+            color: #888;
+            margin-bottom: 30px;
             text-transform: uppercase;
         }
 
         .status-badge {
             display: inline-block;
-            padding: 8px 20px;
-            border-radius: 50px;
-            font-size: 0.8rem;
+            padding: 10px 25px;
+            border-radius: 10px;
             font-weight: bold;
             margin-bottom: 30px;
-            border: 1px solid currentColor;
+            letter-spacing: 2px;
+            border: 2px solid currentColor;
         }
 
-        .status-ok { color: var(--success); background: rgba(5, 255, 161, 0.1); }
-        .status-alert { color: var(--danger); background: rgba(255, 75, 92, 0.1); animation: blink 1s infinite; }
+        .status-ok { color: var(--success); box-shadow: inset 0 0 10px rgba(0, 255, 163, 0.2); }
+        .status-alert { color: var(--danger); animation: pulse 1s infinite; }
 
-        @keyframes blink { 50% { opacity: 0.5; } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 
         .stats-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 20px;
+            gap: 15px;
             margin-bottom: 30px;
         }
 
         .stat-card {
-            background: rgba(255, 255, 255, 0.03);
+            background: rgba(255, 255, 255, 0.02);
             padding: 20px;
-            border-radius: 20px;
+            border-radius: 15px;
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
-        .stat-card i { font-size: 1.5rem; margin-bottom: 10px; color: var(--accent); }
-        .stat-label { font-size: 0.7rem; color: #888; text-transform: uppercase; display: block; }
+        .stat-card i { font-size: 1.2rem; color: var(--accent); margin-bottom: 10px; }
+        .stat-label { font-size: 0.7rem; color: #666; display: block; }
         .stat-value { font-size: 1.8rem; font-weight: bold; margin-top: 5px; }
 
-        .control-section {
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .btn-cyber {
+        .btn-control {
             width: 100%;
-            padding: 18px;
+            padding: 20px;
             border: none;
             border-radius: 15px;
-            font-size: 1rem;
+            font-size: 1.1rem;
             font-weight: bold;
             cursor: pointer;
             transition: 0.3s;
             text-transform: uppercase;
-            letter-spacing: 2px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
+            letter-spacing: 3px;
         }
 
-        .btn-on { background: var(--danger); color: white; box-shadow: 0 0 20px rgba(255, 75, 92, 0.4); }
-        .btn-off { background: var(--success); color: #0b0e14; box-shadow: 0 0 20px rgba(5, 255, 161, 0.4); }
+        .btn-on { background: var(--danger); color: white; box-shadow: 0 0 30px rgba(255, 45, 85, 0.4); }
+        .btn-off { background: var(--success); color: #000; box-shadow: 0 0 30px rgba(0, 255, 163, 0.4); }
 
-        .uptime-text {
+        .uptime-info {
             margin-top: 25px;
-            font-size: 0.75rem;
-            color: #555;
-            font-family: monospace;
+            font-size: 0.7rem;
+            color: #444;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding-top: 15px;
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1><i class="fas fa-microchip"></i> Core System</h1>
+    <div class="live-clock" id="clock">00:00:00</div>
+    <div class="live-date" id="date">-- --- ----</div>
     
-    <div id="alarmStatus" class="status-badge status-ok">
-        <i class="fas fa-check-circle"></i> SYSTEM NORMAL
-    </div>
+    <div id="alarmStatus" class="status-badge status-ok">SYSTEM ONLINE</div>
 
     <div class="stats-grid">
         <div class="stat-card">
-            <i class="fas fa-temperature-high"></i>
-            <span class="stat-label">Temperature</span>
+            <i class="fas fa-thermometer-half"></i>
+            <span class="stat-label">TEMPERATURE</span>
             <div class="stat-value"><span id="temp">--</span>°C</div>
         </div>
         <div class="stat-card">
-            <i class="fas fa-tint"></i>
-            <span class="stat-label">Soil Moisture</span>
+            <i class="fas fa-water"></i>
+            <span class="stat-label">SOIL MOISTURE</span>
             <div class="stat-value"><span id="soil">--</span>%</div>
         </div>
     </div>
 
-    <div class="control-section">
-        <button id="btnControl" class="btn-cyber btn-off" onclick="toggleAlarm()">
-            <i class="fas fa-volume-up"></i> Manual Siren
-        </button>
-    </div>
+    <button id="btnControl" class="btn-control btn-off" onclick="toggleAlarm()">
+        SIREN OVERRIDE
+    </button>
 
-    <div class="uptime-text">
-        LAST SYNC: <span id="uptime">--</span>
+    <div class="uptime-info">
+        DEVICE UPTIME: <span id="uptime">--</span> | PATH: RTDB/SENSOR
     </div>
 </div>
 
 <script>
-    // การตั้งค่า Firebase ของคุณ
+    // 1. นาฬิกา Real-time JS
+    function updateClock() {
+        const now = new Date();
+        const h = String(now.getHours()).padStart(2, '0');
+        const m = String(now.getMinutes()).padStart(2, '0');
+        const s = String(now.getSeconds()).padStart(2, '0');
+        document.getElementById('clock').innerText = `${h}:${m}:${s}`;
+        
+        const options = { year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('date').innerText = now.toLocaleDateString('th-TH', options);
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // 2. Firebase Connection
     const firebaseConfig = {
         apiKey: "AIzaSyD3V-qYNxPh-jU8A5cEMGo4RH0fJOWa4C4",
         databaseURL: "https://kjszz-1a818-default-rtdb.firebaseio.com"
@@ -168,42 +166,37 @@
 
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
-    let currentAlarmState = false;
+    let currentAlarm = false;
 
-    // ดึงข้อมูล Real-time
+    // 3. รับค่าจากเซนเซอร์
     database.ref('sensor').on('value', (snapshot) => {
-        const data = snapshot.val();
-        if (data) {
-            document.getElementById('temp').innerText = data.temperature;
-            document.getElementById('soil').innerText = data.soil;
-            document.getElementById('uptime').innerText = data.last_update;
+        const val = snapshot.val();
+        if (val) {
+            document.getElementById('temp').innerText = val.temperature;
+            document.getElementById('soil').innerText = val.soil;
+            document.getElementById('uptime').innerText = val.last_update;
 
-            const alarmBadge = document.getElementById('alarmStatus');
-            if (data.alarm) {
-                alarmBadge.innerHTML = '<i class="fas fa-exclamation-triangle"></i> ALERT ACTIVE';
-                alarmBadge.className = 'status-badge status-alert';
+            const status = document.getElementById('alarmStatus');
+            if (val.alarm) {
+                status.innerText = "🚨 CRITICAL ALERT";
+                status.className = "status-badge status-alert";
             } else {
-                alarmBadge.innerHTML = '<i class="fas fa-check-circle"></i> SYSTEM NORMAL';
-                alarmBadge.className = 'status-badge status-ok';
+                status.innerText = "✅ SYSTEM NORMAL";
+                status.className = "status-badge status-ok";
             }
         }
     });
 
-    // ดึงสถานะปุ่มกด
+    // 4. รับสถานะปุ่มกด
     database.ref('control/alarm').on('value', (snapshot) => {
-        currentAlarmState = snapshot.val();
+        currentAlarm = snapshot.val();
         const btn = document.getElementById('btnControl');
-        if (currentAlarmState) {
-            btn.innerHTML = '<i class="fas fa-volume-mute"></i> Mute Siren';
-            btn.className = 'btn-cyber btn-on';
-        } else {
-            btn.innerHTML = '<i class="fas fa-volume-up"></i> Manual Siren';
-            btn.className = 'btn-cyber btn-off';
-        }
+        btn.innerText = currentAlarm ? "MUTE SYSTEM" : "SIREN OVERRIDE";
+        btn.className = currentAlarm ? "btn-control btn-on" : "btn-control btn-off";
     });
 
     function toggleAlarm() {
-        database.ref('control/alarm').set(!currentAlarmState);
+        database.ref('control/alarm').set(!currentAlarm);
     }
 </script>
 
